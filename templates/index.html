@@ -3,163 +3,218 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- 1. Metrics Overview Section -->
-<section class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-icon total">📊</div>
-    <div class="metric-data">
-      <div class="metric-label">Total Tasks</div>
-      <div class="metric-number">{{ stats.total }}</div>
+<!-- 1. Welcome Greeting Banner (Panels 1 & 3) -->
+<section class="welcome-banner">
+  <div class="welcome-title">
+    <h1>Good Morning, {{ current_user }}! 👋</h1>
+    <p>Here's what's happening with your tasks today. Stay consistent and achieve your goals!</p>
+  </div>
+  <div class="date-pill">
+    📅 {{ today_formatted }}
+  </div>
+</section>
+
+<!-- 2. Four Stat Metric Cards -->
+<section class="metrics-row">
+  <div class="stat-card">
+    <div class="stat-icon total">☰</div>
+    <div class="stat-info">
+      <div class="stat-label">Total Tasks</div>
+      <div class="stat-value">{{ stats.total }}</div>
     </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-icon pending">⏳</div>
-    <div class="metric-data">
-      <div class="metric-label">Pending</div>
-      <div class="metric-number">{{ stats.pending }}</div>
+  <div class="stat-card">
+    <div class="stat-icon completed">✓</div>
+    <div class="stat-info">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value">{{ stats.completed }}</div>
     </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-icon progress">⚡</div>
-    <div class="metric-data">
-      <div class="metric-label">In Progress</div>
-      <div class="metric-number">{{ stats.in_progress }}</div>
+  <div class="stat-card">
+    <div class="stat-icon pending">📋</div>
+    <div class="stat-info">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ stats.pending }}</div>
     </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-icon completed">✅</div>
-    <div class="metric-data">
-      <div class="metric-label">Completed</div>
-      <div class="metric-number">{{ stats.completed }}</div>
+  <div class="stat-card">
+    <div class="stat-icon overdue">⏰</div>
+    <div class="stat-info">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value">{{ stats.overdue }}</div>
     </div>
   </div>
 </section>
 
-<!-- 2. Filter and Actions Toolbar -->
-<section class="toolbar">
-  <form method="GET" action="{{ url_for('index') }}" class="filter-form">
-    <div class="form-group-inline">
-      <label for="status-filter">Status:</label>
-      <select name="status" id="status-filter" class="select-control" onchange="this.form.submit()">
-        <option value="">All Statuses</option>
-        {% for st in valid_statuses %}
-          <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
-        {% endfor %}
-      </select>
+<!-- 3. Two-Column Dashboard Content Grid -->
+<section class="dashboard-grid">
+  <!-- Left Column: Task Overview Donut Chart -->
+  <div class="content-card">
+    <div class="card-title-bar">
+      <h2>Task Overview</h2>
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--success);">
+        {{ stats.completed_pct }}% Done
+      </span>
     </div>
 
-    <div class="form-group-inline">
-      <label for="priority-filter">Priority:</label>
-      <select name="priority" id="priority-filter" class="select-control" onchange="this.form.submit()">
-        <option value="">All Priorities</option>
-        {% for pr in valid_priorities %}
-          <option value="{{ pr }}" {% if selected_priority == pr %}selected{% endif %}>{{ pr }}</option>
-        {% endfor %}
-      </select>
+    <div class="donut-chart-container">
+      <div class="donut-svg-wrapper">
+        <!-- SVG Donut Representation with dynamic dashoffsets -->
+        <svg width="180" height="180" viewBox="0 0 100 100">
+          <!-- Background track -->
+          <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--bg-hover)" stroke-width="12" />
+
+          {% if stats.total > 0 %}
+            {# Calculate circumference = 2 * PI * 40 = 251.327 #}
+            {% set c = 251.327 %}
+            {% set comp_dash = (stats.completed_pct / 100) * c %}
+            {% set pend_dash = (stats.pending_pct / 100) * c %}
+            {% set over_dash = (stats.overdue_pct / 100) * c %}
+
+            <!-- Completed Segment (Green) -->
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--success)" stroke-width="12"
+                    stroke-dasharray="{{ comp_dash }} {{ c - comp_dash }}" stroke-dashoffset="0"
+                    transform="rotate(-90 50 50)" style="transition: stroke-dasharray 0.6s ease;" />
+
+            <!-- Pending Segment (Yellow) -->
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--warning)" stroke-width="12"
+                    stroke-dasharray="{{ pend_dash }} {{ c - pend_dash }}" stroke-dashoffset="{{ -comp_dash }}"
+                    transform="rotate(-90 50 50)" style="transition: stroke-dasharray 0.6s ease;" />
+
+            <!-- Overdue Segment (Red) -->
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--danger)" stroke-width="12"
+                    stroke-dasharray="{{ over_dash }} {{ c - over_dash }}" stroke-dashoffset="{{ -(comp_dash + pend_dash) }}"
+                    transform="rotate(-90 50 50)" style="transition: stroke-dasharray 0.6s ease;" />
+          {% else %}
+            <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border-color)" stroke-width="12" />
+          {% endif %}
+        </svg>
+
+        <div class="donut-center-text">
+          <div class="center-number">{{ stats.total }}</div>
+          <div class="center-label">Total Tasks</div>
+        </div>
+      </div>
+
+      <div class="donut-legend">
+        <div class="legend-item">
+          <div class="legend-left">
+            <span class="legend-dot completed"></span>
+            <span>Completed</span>
+          </div>
+          <div class="legend-right">{{ stats.completed }} ({{ stats.completed_pct }}%)</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-left">
+            <span class="legend-dot pending"></span>
+            <span>Pending</span>
+          </div>
+          <div class="legend-right">{{ stats.pending }} ({{ stats.pending_pct }}%)</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-left">
+            <span class="legend-dot overdue"></span>
+            <span>Overdue</span>
+          </div>
+          <div class="legend-right">{{ stats.overdue }} ({{ stats.overdue_pct }}%)</div>
+        </div>
+      </div>
     </div>
-
-    {% if selected_status or selected_priority %}
-      <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">✕ Clear Filters</a>
-    {% endif %}
-  </form>
-
-  <a href="{{ url_for('add_task') }}" class="btn btn-primary">
-    + Create Task
-  </a>
-</section>
-
-<!-- 3. Tasks Table Section -->
-<section class="card-table-wrapper">
-  <div class="card-header">
-    <h2>Task Directory</h2>
-    <span class="badge-count">{{ tasks|length }} {% if tasks|length == 1 %}task{% else %}tasks{% endif %}</span>
   </div>
 
-  {% if tasks %}
-    <div class="table-responsive">
-      <table class="tasks-table">
-        <thead>
-          <tr>
-            <th style="width: 32%;">Task</th>
-            <th style="width: 14%;">Priority</th>
-            <th style="width: 14%;">Due Date</th>
-            <th style="width: 22%;">Status</th>
-            <th style="width: 18%; text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for task in tasks %}
-            <tr>
-              <td>
-                <div class="task-title">{{ task['title'] }}</div>
-                {% if task['description'] %}
-                  <div class="task-description" title="{{ task['description'] }}">
-                    {{ task['description'] }}
-                  </div>
-                {% endif %}
-              </td>
-              <td>
-                {% if task['priority'] == 'High' %}
-                  <span class="badge badge-priority-high"><span class="badge-dot"></span>High</span>
-                {% elif task['priority'] == 'Medium' %}
-                  <span class="badge badge-priority-medium"><span class="badge-dot"></span>Medium</span>
-                {% else %}
-                  <span class="badge badge-priority-low"><span class="badge-dot"></span>Low</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if task['due_date'] %}
-                  <span>📅 {{ task['due_date'] }}</span>
-                {% else %}
-                  <span style="color: var(--neutral-400);">No due date</span>
-                {% endif %}
-              </td>
-              <td>
-                <!-- Quick Inline Status Change Form -->
-                <form action="{{ url_for('update_status', task_id=task['id']) }}" method="POST" class="quick-status-form">
-                  <select name="status" class="quick-status-select" onchange="this.form.submit()">
-                    {% for st in valid_statuses %}
-                      <option value="{{ st }}" {% if task['status'] == st %}selected{% endif %}>
-                        {{ st }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </form>
-              </td>
-              <td style="text-align: right;">
-                <div class="actions-cell" style="justify-content: flex-end;">
-                  <a href="{{ url_for('edit_task', task_id=task['id']) }}" class="btn btn-secondary btn-sm" title="Edit task details">
-                    ✏️ Edit
-                  </a>
+  <!-- Right Column: Recent Tasks (Panel 1 & 3) -->
+  <div class="content-card">
+    <div class="card-title-bar">
+      <h2>Recent Tasks</h2>
+      <a href="{{ url_for('tasks_view') }}" class="view-all-link">View All &rarr;</a>
+    </div>
 
-                  <!-- Delete Task with Confirmation Prompt -->
-                  <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task: \'{{ task['title']|e }}\'?');" style="display: inline;">
-                    <button type="submit" class="btn btn-danger btn-sm" title="Delete task">
-                      🗑️ Delete
-                    </button>
-                  </form>
+    {% if recent_tasks %}
+      <div class="recent-tasks-list">
+        {% for task in recent_tasks %}
+          {% set is_overdue = (task['status'] != 'Completed' and task['due_date'] and task['due_date'] < today_iso) %}
+          <div class="recent-task-row">
+            <div class="recent-task-left">
+              <!-- Fast Toggle Checkbox Form -->
+              <form action="{{ url_for('toggle_task', task_id=task['id']) }}" method="POST" class="task-checkbox-form">
+                <button type="submit" class="task-checkbox-btn {% if task['status'] == 'Completed' %}checked{% endif %}" title="Toggle Complete">
+                  {% if task['status'] == 'Completed' %}✓{% endif %}
+                </button>
+              </form>
+
+              <div class="task-title-group">
+                <div class="task-main-title {% if task['status'] == 'Completed' %}strikethrough{% endif %}">
+                  {{ task['title'] }}
                 </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                <div class="task-meta-subtitle">
+                  <span class="badge-subject" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">{{ task['subject'] or 'General' }}</span>
+                  {% if task['due_date'] %}
+                    • 📅 {{ task['due_date'] }}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div>
+              {% if task['status'] == 'Completed' %}
+                <span class="badge badge-completed">Completed</span>
+              {% elif is_overdue %}
+                <span class="badge badge-overdue">Overdue</span>
+              {% else %}
+                <span class="badge badge-pending">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+        <p>No recent tasks found.</p>
+        <button type="button" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;" onclick="openAddTaskModal()">+ Add Your First Task</button>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- 4. Upcoming Deadlines Section (From Panel 3 Dark Theme) -->
+<section class="content-card" style="margin-bottom: 1.5rem;">
+  <div class="card-title-bar">
+    <h2>Upcoming Deadlines</h2>
+    <a href="{{ url_for('calendar_view') }}" class="view-all-link">View Calendar &rarr;</a>
+  </div>
+
+  {% if upcoming_tasks %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+      {% for task in upcoming_tasks %}
+        {% set is_overdue = (task['status'] != 'Completed' and task['due_date'] and task['due_date'] < today_iso) %}
+        <div style="background-color: var(--bg-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 0.925rem;">{{ task['title'] }}</div>
+            <div style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">
+              <span class="badge-subject" style="font-size: 0.68rem; padding: 0.1rem 0.35rem;">{{ task['subject'] or 'General' }}</span>
+              • Due: 📅 {{ task['due_date'] }}
+            </div>
+          </div>
+          <div>
+            {% if task['priority'] == 'High' %}
+              <span class="badge badge-priority-high">High</span>
+            {% elif task['priority'] == 'Medium' %}
+              <span class="badge badge-priority-medium">Medium</span>
+            {% else %}
+              <span class="badge badge-priority-low">Low</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
     </div>
   {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">📝</div>
-      <h3>No tasks found</h3>
-      {% if selected_status or selected_priority %}
-        <p>No tasks match your selected filter criteria.</p>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
-      {% else %}
-        <p>You haven't created any tasks yet. Get started by adding your first student task!</p>
-        <a href="{{ url_for('add_task') }}" class="btn btn-primary">+ Create Your First Task</a>
-      {% endif %}
-    </div>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">No upcoming pending deadlines. You're all caught up!</p>
   {% endif %}
 </section>
 {% endblock %}

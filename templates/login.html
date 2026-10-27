@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — TaskMate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% if current_theme == 'dark' %}dark-theme{% endif %}">
+
+  <div class="login-screen">
+    <!-- Left Blue Branding Panel (Panel 6) -->
+    <div class="login-left-banner">
+      <div class="login-left-icon">🎓</div>
+      <h1>TaskMate</h1>
+      <p>Student Task Management System</p>
+      <div class="login-tagline">Organize &bull; Focus &bull; Achieve</div>
+    </div>
+
+    <!-- Right Sign-In Panel (Panel 6) -->
+    <div class="login-right-panel">
+      <div class="login-box">
+        <h2>Welcome Back!</h2>
+        <p class="subtitle">Please sign in to continue to your dashboard</p>
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert-box alert-{{ category }}">
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('login_view') }}" method="POST">
+          <div class="form-group" style="margin-bottom: 1.15rem;">
+            <label for="username">Email or Username</label>
+            <div style="position: relative;">
+              <input type="text" id="username" name="username" class="input-field" placeholder="student@college.edu or Student" required autofocus>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.15rem;">
+            <label for="password">Password</label>
+            <div style="position: relative;">
+              <input type="password" id="password" name="password" class="input-field" placeholder="••••••••" value="demo123">
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.825rem; margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" name="remember" checked> Remember me
+            </label>
+            <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 600;" onclick="alert('Demo Mode: Enter any username to sign in!');">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem;">
+            Login
+          </button>
+
+          <div style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
+            Don't have an account? 
+            <a href="{{ url_for('index') }}" style="color: var(--primary); font-weight: 700; text-decoration: none;">Continue as Guest</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

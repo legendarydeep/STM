@@ -3,59 +3,245 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Student Task Management System - College Practical Mini Project">
-  <title>{% block title %}Dashboard{% endblock %} — Student Task Management System</title>
+  <meta name="description" content="TaskMate — Student Task Management System">
+  <title>{% block title %}Dashboard{% endblock %} — TaskMate</title>
   
-  <!-- Modern Google Font: Inter -->
+  <!-- Modern Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Application Stylesheet -->
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="{% if current_theme == 'dark' %}dark-theme{% endif %}">
 
-  <!-- Top Navigation Bar -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <a href="{{ url_for('index') }}" class="brand">
-        <div class="brand-icon">✓</div>
-        <div class="brand-text">
-          <h1>Student Task Management System</h1>
-          <span>College Practical Project • CSE</span>
+  <div class="app-container">
+    <!-- 1. Left Sidebar Navigation (Panels 1 & 3) -->
+    <aside class="sidebar">
+      <a href="{{ url_for('index') }}" class="brand-section">
+        <div class="brand-logo-icon">🎓</div>
+        <div>
+          <div class="brand-title">TaskMate</div>
+          <div class="brand-subtitle">Student Task Management</div>
         </div>
       </a>
-      <div class="nav-links">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">📋 Dashboard</a>
-        <a href="{{ url_for('add_task') }}" class="btn btn-primary btn-sm">+ Add Task</a>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+            <span class="nav-icon">🏠</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="nav-link" onclick="openAddTaskModal()">
+            <span class="nav-icon">➕</span>
+            <span>Add Task</span>
+          </button>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('tasks_view') }}" class="nav-link {% if request.endpoint == 'tasks_view' and request.args.get('tab') != 'Completed' %}active{% endif %}">
+            <span class="nav-icon">📋</span>
+            <span>My Tasks</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('tasks_view', tab='Completed') }}" class="nav-link {% if request.args.get('tab') == 'Completed' %}active{% endif %}">
+            <span class="nav-icon">✅</span>
+            <span>Completed</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('calendar_view') }}" class="nav-link {% if request.endpoint == 'calendar_view' %}active{% endif %}">
+            <span class="nav-icon">📅</span>
+            <span>Calendar</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('settings_view') }}" class="nav-link {% if request.endpoint == 'settings_view' %}active{% endif %}">
+            <span class="nav-icon">⚙️</span>
+            <span>Settings</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Sidebar Motivational Quote Card -->
+      <div class="sidebar-quote-card">
+        <div class="sidebar-quote-icon">💡</div>
+        <div class="sidebar-quote-text">
+          Small steps create big results!
+        </div>
       </div>
+    </aside>
+
+    <!-- 2. Main Content Area -->
+    <div class="main-content">
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <form action="{{ url_for('tasks_view') }}" method="GET" class="search-box">
+          <span>🔍</span>
+          <input type="text" name="q" placeholder="Search tasks or subjects..." value="{{ request.args.get('q', '') }}">
+        </form>
+
+        <div class="header-right">
+          <!-- Light / Dark Theme Switcher Button -->
+          <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light / Dark Mode" onclick="toggleTheme()">
+            🌙
+          </button>
+
+          <!-- Notification Bell -->
+          <div class="notification-bell" title="Notifications" onclick="alert('You have tasks due this week!')">
+            <span>🔔</span>
+            <span class="notification-dot"></span>
+          </div>
+
+          <!-- User Profile Dropdown Pill -->
+          <a href="{{ url_for('settings_view') }}" class="user-profile-badge" title="Student Profile">
+            <div class="user-avatar">{{ current_user[0] }}</div>
+            <div class="user-name">{{ current_user }}</div>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">▼</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Page Body Content -->
+      <main class="page-body">
+        <!-- Flash Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert-box alert-{{ category }}">
+                <span>{{ message }}</span>
+                <span style="cursor: pointer;" onclick="this.parentElement.remove();">&times;</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
     </div>
+  </div>
+
+  <!-- 3. Add Task Modal (Panel 2) -->
+  <div class="modal-overlay" id="addTaskModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add New Task</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAddTaskModal()">&times;</button>
+      </div>
+      <form action="{{ url_for('add_task') }}" method="POST">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="modal-title">Task Title <span class="required">*</span></label>
+            <input type="text" id="modal-title" name="title" class="input-field" placeholder="Enter task name" required maxlength="150" autofocus>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-subject">Subject</label>
+            <input type="text" id="modal-subject" name="subject" class="input-field" placeholder="e.g. Mathematics, Web Development" list="subject-suggestions">
+            <datalist id="subject-suggestions">
+              {% for sub in default_subjects %}
+                <option value="{{ sub }}">
+              {% endfor %}
+            </datalist>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="modal-priority">Priority</label>
+              <select id="modal-priority" name="priority" class="select-field">
+                <option value="Low">🟢 Low</option>
+                <option value="Medium" selected>🟡 Medium</option>
+                <option value="High">🔴 High</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="modal-due-date">Due Date</label>
+              <input type="date" id="modal-due-date" name="due_date" class="input-field">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-desc">Description</label>
+            <textarea id="modal-desc" name="description" class="textarea-field" rows="3" placeholder="Add task description (optional)"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddTaskModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Mobile Bottom Navigation Bar (Panel 5) -->
+  <nav class="mobile-bottom-nav">
+    <a href="{{ url_for('index') }}" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+      <span class="mobile-icon">🏠</span>
+      <span>Dashboard</span>
+    </a>
+    <button type="button" class="mobile-nav-item" style="background: none; border: none;" onclick="openAddTaskModal()">
+      <span class="mobile-icon">➕</span>
+      <span>Add Task</span>
+    </button>
+    <a href="{{ url_for('tasks_view') }}" class="mobile-nav-item {% if request.endpoint == 'tasks_view' %}active{% endif %}">
+      <span class="mobile-icon">📋</span>
+      <span>My Tasks</span>
+    </a>
+    <a href="{{ url_for('calendar_view') }}" class="mobile-nav-item {% if request.endpoint == 'calendar_view' %}active{% endif %}">
+      <span class="mobile-icon">📅</span>
+      <span>Calendar</span>
+    </a>
   </nav>
 
-  <!-- Main Container -->
-  <main class="main-wrapper">
-    <!-- Flash Messages Notification Area -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="alert-container">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-              <span>{{ message }}</span>
-              <button type="button" class="alert-close" onclick="this.parentElement.remove();">&times;</button>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+  <!-- Interactive Scripts (Theme & Modal) -->
+  <script>
+    // Theme toggle logic (remembers choice in localStorage)
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem('taskmate_theme');
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        if (toggleBtn) toggleBtn.textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark-theme');
+        if (toggleBtn) toggleBtn.textContent = '🌙';
+      }
+    }
 
-    {% block content %}{% endblock %}
-  </main>
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-theme');
+      localStorage.setItem('taskmate_theme', isDark ? 'dark' : 'light');
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      if (toggleBtn) toggleBtn.textContent = isDark ? '☀️' : '🌙';
+    }
 
-  <!-- Footer -->
-  <footer class="footer">
-    <p>Student Task Management System &copy; 2026 — Built with Python, Flask & SQLite</p>
-  </footer>
+    // Modal logic
+    function openAddTaskModal() {
+      const modal = document.getElementById('addTaskModal');
+      if (modal) {
+        modal.classList.add('active');
+        document.getElementById('modal-title').focus();
+      }
+    }
+
+    function closeAddTaskModal() {
+      const modal = document.getElementById('addTaskModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeAddTaskModal();
+    });
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', applySavedTheme);
+  </script>
 
   {% block scripts %}{% endblock %}
 </body>

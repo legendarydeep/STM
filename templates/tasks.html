@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<!-- 1. Top Section: Title & Controls (Panel 4) -->
+<div class="welcome-banner" style="margin-bottom: 1.25rem;">
+  <div>
+    <h1>My Tasks</h1>
+    <p>Organize, filter, and track all your academic assignments.</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <button type="button" class="btn btn-primary" onclick="openAddTaskModal()">+ Add Task</button>
+  </div>
+</div>
+
+<!-- 2. Filter Tabs & View Toggle Bar (Panel 4) -->
+<div class="filter-tabs-wrapper">
+  <!-- Tabs: All, Pending, Completed, Overdue -->
+  <div class="tabs-group">
+    <a href="{{ url_for('tasks_view', tab='All', q=search_query, priority=priority_filter, subject=subject_filter, view=view_mode) }}" 
+       class="tab-btn {% if current_tab == 'All' %}active{% endif %}">
+      All ({{ stats.total }})
+    </a>
+    <a href="{{ url_for('tasks_view', tab='Pending', q=search_query, priority=priority_filter, subject=subject_filter, view=view_mode) }}" 
+       class="tab-btn {% if current_tab == 'Pending' %}active{% endif %}">
+      Pending ({{ stats.pending }})
+    </a>
+    <a href="{{ url_for('tasks_view', tab='Completed', q=search_query, priority=priority_filter, subject=subject_filter, view=view_mode) }}" 
+       class="tab-btn {% if current_tab == 'Completed' %}active{% endif %}">
+      Completed ({{ stats.completed }})
+    </a>
+    <a href="{{ url_for('tasks_view', tab='Overdue', q=search_query, priority=priority_filter, subject=subject_filter, view=view_mode) }}" 
+       class="tab-btn {% if current_tab == 'Overdue' %}active{% endif %}">
+      Overdue ({{ stats.overdue }})
+    </a>
+  </div>
+
+  <!-- Secondary Filters (Priority & Subject) -->
+  <form method="GET" action="{{ url_for('tasks_view') }}" style="display: flex; gap: 0.5rem; align-items: center;">
+    <input type="hidden" name="tab" value="{{ current_tab }}">
+    <input type="hidden" name="view" value="{{ view_mode }}">
+    
+    <select name="subject" class="select-field" style="padding: 0.45rem 0.75rem; font-size: 0.8rem;" onchange="this.form.submit()">
+      <option value="">All Subjects</option>
+      {% for sub in subjects %}
+        <option value="{{ sub }}" {% if subject_filter == sub %}selected{% endif %}>{{ sub }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="priority" class="select-field" style="padding: 0.45rem 0.75rem; font-size: 0.8rem;" onchange="this.form.submit()">
+      <option value="">All Priorities</option>
+      {% for pr in valid_priorities %}
+        <option value="{{ pr }}" {% if priority_filter == pr %}selected{% endif %}>{{ pr }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- View Switcher (Table vs Grid Cards) -->
+    <a href="{{ url_for('tasks_view', tab=current_tab, q=search_query, priority=priority_filter, subject=subject_filter, view='table') }}" 
+       class="btn btn-secondary" style="padding: 0.45rem 0.65rem;" title="Table View">☰</a>
+    <a href="{{ url_for('tasks_view', tab=current_tab, q=search_query, priority=priority_filter, subject=subject_filter, view='grid') }}" 
+       class="btn btn-secondary" style="padding: 0.45rem 0.65rem;" title="Card Grid View">▦</a>
+  </form>
+</div>
+
+<!-- 3. Tasks Presentation (Table or Card Grid) -->
+{% if tasks %}
+  {% if view_mode == 'grid' %}
+    <!-- Task Card Grid (Panel 7) -->
+    <div class="task-cards-grid">
+      {% for task in tasks %}
+        {% set is_overdue = (task['status'] != 'Completed' and task['due_date'] and task['due_date'] < today_iso) %}
+        <div class="task-card-item">
+          <div class="card-top-header">
+            <div class="card-title-area">
+              <form action="{{ url_for('toggle_task', task_id=task['id']) }}" method="POST" class="task-checkbox-form">
+                <button type="submit" class="task-checkbox-btn {% if task['status'] == 'Completed' %}checked{% endif %}">
+                  {% if task['status'] == 'Completed' %}✓{% endif %}
+                </button>
+              </form>
+              <div>
+                <div class="card-main-title {% if task['status'] == 'Completed' %}strikethrough{% endif %}">
+                  {{ task['title'] }}
+                </div>
+                <div style="margin-top: 0.25rem;">
+                  <span class="badge-subject">{{ task['subject'] or 'General' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Priority badge & actions -->
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+              {% if task['priority'] == 'High' %}
+                <span class="badge badge-priority-high">High</span>
+              {% elif task['priority'] == 'Medium' %}
+                <span class="badge badge-priority-medium">Medium</span>
+              {% else %}
+                <span class="badge badge-priority-low">Low</span>
+              {% endif %}
+
+              <div class="card-actions">
+                <a href="{{ url_for('edit_task', task_id=task['id']) }}" class="action-icon-btn" title="Edit">✏️</a>
+                <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" onsubmit="return confirm('Delete this task?');" style="display: inline;">
+                  <button type="submit" class="action-icon-btn delete" title="Delete">🗑️</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Due Date & Description -->
+          <div class="card-due-date">
+            📅 Due: {% if task['due_date'] %}{{ task['due_date'] }}{% else %}No due date{% endif %}
+          </div>
+
+          {% if task['description'] %}
+            <div class="card-description">
+              {{ task['description'] }}
+            </div>
+          {% endif %}
+
+          <!-- Footer: Assigned To & Status Badge -->
+          <div class="card-bottom-footer">
+            <div class="assigned-badge">
+              <div class="mini-avatar">S</div>
+              <span>Assigned to: You</span>
+            </div>
+
+            <div>
+              {% if task['status'] == 'Completed' %}
+                <span class="badge badge-completed">Completed</span>
+              {% elif is_overdue %}
+                <span class="badge badge-overdue">Overdue</span>
+              {% else %}
+                <span class="badge badge-pending">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <!-- Task Table View (Panel 4) -->
+    <div class="tasks-table-card">
+      <div style="overflow-x: auto;">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width: 32%;">Task</th>
+              <th style="width: 16%;">Subject</th>
+              <th style="width: 12%;">Priority</th>
+              <th style="width: 15%;">Due Date</th>
+              <th style="width: 13%;">Status</th>
+              <th style="width: 12%; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+              {% set is_overdue = (task['status'] != 'Completed' and task['due_date'] and task['due_date'] < today_iso) %}
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <!-- Checkbox toggle -->
+                    <form action="{{ url_for('toggle_task', task_id=task['id']) }}" method="POST" class="task-checkbox-form">
+                      <button type="submit" class="task-checkbox-btn {% if task['status'] == 'Completed' %}checked{% endif %}" title="Toggle Complete">
+                        {% if task['status'] == 'Completed' %}✓{% endif %}
+                      </button>
+                    </form>
+                    <div>
+                      <div style="font-weight: 700; color: var(--text-main); {% if task['status'] == 'Completed' %}text-decoration: line-through; opacity: 0.7;{% endif %}">
+                        {{ task['title'] }}
+                      </div>
+                      {% if task['description'] %}
+                        <div style="font-size: 0.775rem; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                          {{ task['description'] }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge-subject">{{ task['subject'] or 'General' }}</span>
+                </td>
+                <td>
+                  {% if task['priority'] == 'High' %}
+                    <span class="badge badge-priority-high">High</span>
+                  {% elif task['priority'] == 'Medium' %}
+                    <span class="badge badge-priority-medium">Medium</span>
+                  {% else %}
+                    <span class="badge badge-priority-low">Low</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if task['due_date'] %}
+                    <span style="font-size: 0.825rem; font-weight: 600;">📅 {{ task['due_date'] }}</span>
+                  {% else %}
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">No date</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if task['status'] == 'Completed' %}
+                    <span class="badge badge-completed">Completed</span>
+                  {% elif is_overdue %}
+                    <span class="badge badge-overdue">Overdue</span>
+                  {% else %}
+                    <span class="badge badge-pending">Pending</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem;">
+                    <a href="{{ url_for('edit_task', task_id=task['id']) }}" class="action-icon-btn" title="Edit">✏️</a>
+                    <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?');" style="display: inline;">
+                      <button type="submit" class="action-icon-btn delete" title="Delete">🗑️</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <!-- Empty State -->
+  <div class="content-card" style="text-align: center; padding: 3.5rem 1rem;">
+    <div style="font-size: 3rem; margin-bottom: 0.75rem;">📝</div>
+    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">No tasks found</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1.25rem;">There are no tasks matching your current filter tab or query.</p>
+    <button type="button" class="btn btn-primary" onclick="openAddTaskModal()">+ Create New Task</button>
+  </div>
+{% endif %}
+{% endblock %}

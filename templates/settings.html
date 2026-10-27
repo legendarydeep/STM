@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="welcome-banner">
+  <div>
+    <h1>Settings & Preferences</h1>
+    <p>Manage your student profile, theme, and application preferences.</p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+  <!-- Profile Settings -->
+  <div class="content-card">
+    <div class="card-title-bar">
+      <h2>Student Profile</h2>
+    </div>
+
+    <form action="{{ url_for('settings_view') }}" method="POST">
+      <input type="hidden" name="action" value="update_profile">
+
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="user-avatar" style="width: 56px; height: 56px; font-size: 1.5rem;">{{ current_user[0] }}</div>
+        <div>
+          <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">{{ current_user }}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Computer Science & Engineering</div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="user_name">Display Name</label>
+        <input type="text" id="user_name" name="user_name" class="input-field" value="{{ current_user }}" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+    </form>
+  </div>
+
+  <!-- Appearance & Theme Settings -->
+  <div class="content-card">
+    <div class="card-title-bar">
+      <h2>Appearance & Theme</h2>
+    </div>
+
+    <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+      Toggle between the modern Light Theme (Panel 1) and the sleek Dark Theme (Panel 3).
+    </p>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+      <button type="button" class="btn btn-secondary" style="flex: 1; padding: 1rem; text-align: center;" onclick="localStorage.setItem('taskmate_theme', 'light'); applySavedTheme();">
+        ☀️ Light Mode
+      </button>
+      <button type="button" class="btn btn-secondary" style="flex: 1; padding: 1rem; text-align: center;" onclick="localStorage.setItem('taskmate_theme', 'dark'); applySavedTheme();">
+        🌙 Dark Mode
+      </button>
+    </div>
+
+    <div style="padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+      <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="color: var(--danger); border-color: var(--danger-border); width: 100%;">
+        🚪 Sign Out (Switch User)
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

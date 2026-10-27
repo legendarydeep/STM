@@ -1,80 +1,57 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Task{% endblock %}
+{% block title %}Add New Task{% endblock %}
 
 {% block content %}
-<div class="form-card">
-  <div class="form-header">
-    <h2>Add New Task</h2>
-    <p>Define a new coursework, assignment, or project task.</p>
-  </div>
-
-  <form method="POST" action="{{ url_for('add_task') }}" novalidate>
-    <!-- Task Title -->
-    <div class="form-row">
-      <label for="title" class="form-label">Task Title <span class="required">*</span></label>
-      <input 
-        type="text" 
-        id="title" 
-        name="title" 
-        class="form-control" 
-        placeholder="e.g., Complete Compiler Design Lab Sheet 4"
-        value="{{ title|default('') }}"
-        required
-        maxlength="150"
-        autofocus
-      >
+<div style="max-width: 600px; margin: 0 auto;">
+  <div class="content-card">
+    <div class="card-title-bar" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <h2>Add New Task</h2>
+      <a href="{{ url_for('tasks_view') }}" class="btn btn-secondary btn-sm">Cancel</a>
     </div>
 
-    <!-- Description -->
-    <div class="form-row">
-      <label for="description" class="form-label">Description</label>
-      <textarea 
-        id="description" 
-        name="description" 
-        class="form-control" 
-        placeholder="Optional details, notes, reference links, or steps..."
-      >{{ description|default('') }}</textarea>
-    </div>
+    <form action="{{ url_for('add_task') }}" method="POST">
+      <div class="form-group" style="margin-bottom: 1.15rem;">
+        <label for="title">Task Title <span class="required">*</span></label>
+        <input type="text" id="title" name="title" class="input-field" placeholder="Enter task name" value="{{ title|default('') }}" required maxlength="150" autofocus>
+      </div>
 
-    <!-- Priority and Due Date Grid -->
-    <div class="form-grid-2 form-row">
-      <div>
-        <label for="priority" class="form-label">Priority</label>
-        <select id="priority" name="priority" class="form-control">
-          {% for pr in valid_priorities %}
-            <option value="{{ pr }}" {% if priority|default('Medium') == pr %}selected{% endif %}>{{ pr }}</option>
+      <div class="form-group" style="margin-bottom: 1.15rem;">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" class="input-field" placeholder="e.g. Mathematics, Web Development" value="{{ subject|default('') }}" list="subject-suggestions">
+        <datalist id="subject-suggestions">
+          {% for sub in default_subjects %}
+            <option value="{{ sub }}">
           {% endfor %}
-        </select>
+        </datalist>
       </div>
 
-      <div>
-        <label for="due_date" class="form-label">Due Date</label>
-        <input 
-          type="date" 
-          id="due_date" 
-          name="due_date" 
-          class="form-control"
-          value="{{ due_date|default('') }}"
-        >
+      <div class="form-grid-2" style="margin-bottom: 1.15rem;">
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority" class="select-field">
+            {% for pr in valid_priorities %}
+              <option value="{{ pr }}" {% if priority|default('Medium') == pr %}selected{% endif %}>{{ pr }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="due_date">Due Date</label>
+          <input type="date" id="due_date" name="due_date" class="input-field" value="{{ due_date|default('') }}">
+        </div>
       </div>
-    </div>
 
-    <!-- Status -->
-    <div class="form-row">
-      <label for="status" class="form-label">Initial Status</label>
-      <select id="status" name="status" class="form-control">
-        {% for st in valid_statuses %}
-          <option value="{{ st }}" {% if status|default('Pending') == st %}selected{% endif %}>{{ st }}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="description">Description (Optional)</label>
+        <textarea id="description" name="description" class="textarea-field" rows="3" placeholder="Add task description or requirements...">{{ description|default('') }}</textarea>
+      </div>
 
-    <!-- Actions -->
-    <div class="form-actions">
-      <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">Save Task</button>
-    </div>
-  </form>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <a href="{{ url_for('tasks_view') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Add Task</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
