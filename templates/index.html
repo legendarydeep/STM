@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- 1. Metrics Overview Section -->
+<section class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-icon total">📊</div>
+    <div class="metric-data">
+      <div class="metric-label">Total Tasks</div>
+      <div class="metric-number">{{ stats.total }}</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon pending">⏳</div>
+    <div class="metric-data">
+      <div class="metric-label">Pending</div>
+      <div class="metric-number">{{ stats.pending }}</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon progress">⚡</div>
+    <div class="metric-data">
+      <div class="metric-label">In Progress</div>
+      <div class="metric-number">{{ stats.in_progress }}</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon completed">✅</div>
+    <div class="metric-data">
+      <div class="metric-label">Completed</div>
+      <div class="metric-number">{{ stats.completed }}</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Filter and Actions Toolbar -->
+<section class="toolbar">
+  <form method="GET" action="{{ url_for('index') }}" class="filter-form">
+    <div class="form-group-inline">
+      <label for="status-filter">Status:</label>
+      <select name="status" id="status-filter" class="select-control" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        {% for st in valid_statuses %}
+          <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group-inline">
+      <label for="priority-filter">Priority:</label>
+      <select name="priority" id="priority-filter" class="select-control" onchange="this.form.submit()">
+        <option value="">All Priorities</option>
+        {% for pr in valid_priorities %}
+          <option value="{{ pr }}" {% if selected_priority == pr %}selected{% endif %}>{{ pr }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if selected_status or selected_priority %}
+      <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">✕ Clear Filters</a>
+    {% endif %}
+  </form>
+
+  <a href="{{ url_for('add_task') }}" class="btn btn-primary">
+    + Create Task
+  </a>
+</section>
+
+<!-- 3. Tasks Table Section -->
+<section class="card-table-wrapper">
+  <div class="card-header">
+    <h2>Task Directory</h2>
+    <span class="badge-count">{{ tasks|length }} {% if tasks|length == 1 %}task{% else %}tasks{% endif %}</span>
+  </div>
+
+  {% if tasks %}
+    <div class="table-responsive">
+      <table class="tasks-table">
+        <thead>
+          <tr>
+            <th style="width: 32%;">Task</th>
+            <th style="width: 14%;">Priority</th>
+            <th style="width: 14%;">Due Date</th>
+            <th style="width: 22%;">Status</th>
+            <th style="width: 18%; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+            <tr>
+              <td>
+                <div class="task-title">{{ task['title'] }}</div>
+                {% if task['description'] %}
+                  <div class="task-description" title="{{ task['description'] }}">
+                    {{ task['description'] }}
+                  </div>
+                {% endif %}
+              </td>
+              <td>
+                {% if task['priority'] == 'High' %}
+                  <span class="badge badge-priority-high"><span class="badge-dot"></span>High</span>
+                {% elif task['priority'] == 'Medium' %}
+                  <span class="badge badge-priority-medium"><span class="badge-dot"></span>Medium</span>
+                {% else %}
+                  <span class="badge badge-priority-low"><span class="badge-dot"></span>Low</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if task['due_date'] %}
+                  <span>📅 {{ task['due_date'] }}</span>
+                {% else %}
+                  <span style="color: var(--neutral-400);">No due date</span>
+                {% endif %}
+              </td>
+              <td>
+                <!-- Quick Inline Status Change Form -->
+                <form action="{{ url_for('update_status', task_id=task['id']) }}" method="POST" class="quick-status-form">
+                  <select name="status" class="quick-status-select" onchange="this.form.submit()">
+                    {% for st in valid_statuses %}
+                      <option value="{{ st }}" {% if task['status'] == st %}selected{% endif %}>
+                        {{ st }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td style="text-align: right;">
+                <div class="actions-cell" style="justify-content: flex-end;">
+                  <a href="{{ url_for('edit_task', task_id=task['id']) }}" class="btn btn-secondary btn-sm" title="Edit task details">
+                    ✏️ Edit
+                  </a>
+
+                  <!-- Delete Task with Confirmation Prompt -->
+                  <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task: \'{{ task['title']|e }}\'?');" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Delete task">
+                      🗑️ Delete
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3>No tasks found</h3>
+      {% if selected_status or selected_priority %}
+        <p>No tasks match your selected filter criteria.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
+      {% else %}
+        <p>You haven't created any tasks yet. Get started by adding your first student task!</p>
+        <a href="{{ url_for('add_task') }}" class="btn btn-primary">+ Create Your First Task</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

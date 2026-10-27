@@ -1,0 +1,30 @@
+# Docker build ignore file
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Version control
+.git/
+.gitignore
+
+# SQLite databases (Keep instance directory structure, ignore local DBs)
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+
+# Test caches and outputs
+.pytest_cache/
+.coverage
+htmlcov/
+test-results.xml
+
+# Markdown and OS files
+*.md
+.DS_Store
+Thumbs.db

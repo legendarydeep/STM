@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Task #{{ task['id'] }}{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <div class="form-header">
+    <h2>Edit Task #{{ task['id'] }}</h2>
+    <p>Update status, priority, due date, or task notes.</p>
+  </div>
+
+  <form method="POST" action="{{ url_for('edit_task', task_id=task['id']) }}" novalidate>
+    <!-- Task Title -->
+    <div class="form-row">
+      <label for="title" class="form-label">Task Title <span class="required">*</span></label>
+      <input 
+        type="text" 
+        id="title" 
+        name="title" 
+        class="form-control" 
+        value="{{ task['title'] }}"
+        required
+        maxlength="150"
+      >
+    </div>
+
+    <!-- Description -->
+    <div class="form-row">
+      <label for="description" class="form-label">Description</label>
+      <textarea 
+        id="description" 
+        name="description" 
+        class="form-control"
+      >{{ task['description'] or '' }}</textarea>
+    </div>
+
+    <!-- Priority and Due Date Grid -->
+    <div class="form-grid-2 form-row">
+      <div>
+        <label for="priority" class="form-label">Priority</label>
+        <select id="priority" name="priority" class="form-control">
+          {% for pr in valid_priorities %}
+            <option value="{{ pr }}" {% if task['priority'] == pr %}selected{% endif %}>{{ pr }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="due_date" class="form-label">Due Date</label>
+        <input 
+          type="date" 
+          id="due_date" 
+          name="due_date" 
+          class="form-control"
+          value="{{ task['due_date'] or '' }}"
+        >
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="form-row">
+      <label for="status" class="form-label">Status</label>
+      <select id="status" name="status" class="form-control">
+        {% for st in valid_statuses %}
+          <option value="{{ st }}" {% if task['status'] == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Update Task</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

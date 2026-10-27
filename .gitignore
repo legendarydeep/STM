@@ -1,0 +1,35 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite database files (Keep instance directory with .gitkeep, ignore actual DBs)
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+!instance/.gitkeep
+
+# Pytest and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+test-results.xml
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables & secrets
+.env
+.env.local
+*.log
